@@ -39,7 +39,7 @@ public class JpaMain {
             member.setName("ZZZZZ");    // 수정 시 영속성 컨텍스트에 들어있기 때문에 persist 안 써도 된다.
                                         // 수정이 되면 알아서 update 쿼리를 보내준다. ( 변경감지 : dirty checking )
 
-            
+
 
 
 
