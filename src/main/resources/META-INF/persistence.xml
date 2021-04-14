@@ -17,7 +17,9 @@
             <property name="hibernate.format_sql" value="true"/>    <!-- 쿼리 이쁘게 포맷팅 -->
             <property name="hibernate.use_sql_comments" value="true"/>   <!-- 쿼리에 주석달아줌 -->
             <property name="hibernate.jdbc.batch_size" value="10"/> <!-- 10개까지 모았다가 DB에 쿼리를 보냄 ( 버퍼링 ) -->
-            <!--<property name="hibernate.hbm2ddl.auto" value="create" />-->
+            <property name="hibernate.hbm2ddl.auto" value="create" /> <!-- 실행 시 DB를 날리고 새로 실행 -->
+                                                <!-- create-drop 하면 생성 후 drop , 나머지 강의자료 참고 -->
+                                                <!-- 위에 hibernate에서 h2가 아닌 Oracle해도 알아서 해석해서 실행해준다. -->
         </properties>
     </persistence-unit>
 </persistence>
