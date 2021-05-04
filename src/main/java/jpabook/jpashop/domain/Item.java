@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Item {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE) // 싱글테이블 상속 전략 사용 ( JOINED 전략도 있음 )
+@DiscriminatorColumn    // DTYPE 사용 ( 각 타입에 따라 DTYPE에 Book, Album, Movie이 들어감 )
+public abstract class Item extends BaseEntity {
 
     @Id @GeneratedValue
     @Column(name = "ITEM_ID")
