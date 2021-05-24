@@ -14,7 +14,7 @@ public class Category extends BaseEntity {
 
     // 카테고리 보면 쭉 내려가는 형식으로 되어있는데,
     // 그거를 셀프로 하는걸 보여주기 위함 ( 핵심코드는 아님 )
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PARENT_ID")
     private Category parent;
 

@@ -26,7 +26,6 @@ public class JpaMain {
             book.setAuthor("박현준");
 
             em.persist(book);
-
             tx.commit();
         } catch (Exception e) {
             tx.rollback();

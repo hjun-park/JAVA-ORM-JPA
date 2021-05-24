@@ -8,8 +8,8 @@
             <!-- 필수 속성 -->
             <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
             <property name="javax.persistence.jdbc.user" value="sa"/>
-            <property name="javax.persistence.jdbc.password" value=""/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>  <!-- localhost root test -->
+            <property name="javax.persistence.jdbc.password" value="sa"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/jpamart"/>  <!-- localhost root test -->
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/> <!-- h2 DB로 할거야 이거로 번역해 -->
                                                     <!-- org.hibernate.dialect.Oracle12cDialect" 이런 형식으로 -->
             <!-- hibernate 전용 옵션 -->
