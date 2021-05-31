@@ -1,5 +1,7 @@
 import jpql.Member;
 import jpql.MemberDTO;
+import jpql.MemberType;
+import jpql.Team;
 
 import javax.persistence.*;
 import java.util.List;
@@ -14,14 +16,6 @@ public class JpqlMain {
         tx.begin();
 
         try {
-            for (int i=0;  i<100; i++) {
-                Member member = new Member();
-                member.setUsername("member"+i);
-                member.setAge(i);
-                em.persist(member);
-
-            }
-
 
             // ======================= 01 : JPQL 기본문법 =========================
 
@@ -86,20 +80,195 @@ public class JpqlMain {
             // 복잡하게 select from ... nested 3 selecet from을 사용해서 페이징을 하였다면,..(오라클)
             // JPA는 API로 추상화 해주었음
 
+            // ======================= 04 : Inner, Outer, Theta 조인 ============== //
+            /*
+//                내부 조인 :
+//                 SELECT m FROM Member m [INNER] JOIN m.team t
+//                  - 멤버는 있고 팀이 없는 경우 데이터가 아예 나오지 않음
+//
+//                외부 조인
+//                 SELECT m FROM Member m LEFT [OUTER] JOIN m.team.t
+//                  - 멤버는 있고 팀이 없는 경우 데이터가 팀 쪽은 NULL로 표시
+//
+//                세타 조인
+//                  select count(m) from Member m, Team t where m.username = t.name
+//                  - 멤버랑 팀 서로 카티션 곱
+//             */
+            Team teamA = new Team();
+            teamA.setName("팀A");
+            em.persist(teamA);
+
+            Team teamB = new Team();
+            teamB.setName("팀B");
+            em.persist(teamB);
+
+            Member member1 = new Member();
+            member1.setUsername("회원1");
+            member1.setTeam(teamA);
+            member1.setAge(10);
+            member1.setType(MemberType.ADMIN);
+            em.persist(member1);
+
+            Member member2 = new Member();
+            member2.setUsername("회원2");
+            member2.setTeam(teamA);
+            member2.setAge(10);
+            member2.setType(MemberType.ADMIN);
+            em.persist(member2);
+
+            Member member3 = new Member();
+            member3.setUsername("회원3");
+            member3.setTeam(teamB);
+            member3.setAge(10);
+            member3.setType(MemberType.ADMIN);
+            em.persist(member3);
+
+
+//            em.flush();
+//            em.clear();
+//
+//
+//            String innerJoinQuery = "select m from Member m inner join m.team t";
+//            String outerJoinQuery = "select m from Member m left join m.team t";
+//            String thetaJoinQuery = "select m from Member m, Team t where m.username =  t.name";
+//
+//            List<Member> result = em.createQuery(thetaJoinQuery, Member.class)
+//                    .getResultList();
+//
+//            // 페이징은 sorting 하면서 가져오기 때문에 제대로 돌아가는거 보려면 정렬부터            // 페이징
+////            List<Member> result = em.createQuery("select m from Member m order by m.age desc", Member.class)
+////                    .setFirstResult(1)  // 98부터 실행
+////                    .setMaxResults(10)
+////                    .getResultList();
+//
+//            System.out.println("result.size() = " + result.size());
+
+
+//            // ======================= 05 : JPQL 타입 ============== //
+//            em.flush();
+//            em.clear();
+//
+//            // enum 타입은 jpql에서 패키지명까지 다 적어주어야 한다.
+////            String typeQuery = "select m.username, 'HELLO', true from Member m " +
+////                    "where m.type = jpql.MemberType.ADMIN";
+//
+//            //위 대신에 편하게 아래와 같이 쓸 수 있다.
+//            String typeQuery = "select m.username, 'HELLO', true from Member m " +
+//                    "where m.type = :userType";
+//
+//            List<Object[]> typeResult = em.createQuery(typeQuery)
+//                    .setParameter("userType", MemberType.ADMIN)
+//                    .getResultList();
+//
+//            for (Object[] objects: typeResult) {
+//                System.out.println("objects = " + objects[0]);
+//                System.out.println("objects = " + objects[1]);
+//                System.out.println("objects = " + objects[2]);
+//            }
+//
+//
+//
+//            // ======================= 06 : CASE 식 ============== //
+//            em.flush();
+//            em.clear();
+//
+//            String query =
+//                    "select " +
+//                            "case when m.age <= 10 then '학생요금' " +
+//                            "     when m.age >= 60 then '경로요금' " +
+//                            "     else '일반요금' " +
+//                            "end " +
+//                    "from Member m";
+//            List<String> result = em.createQuery(query, String.class)
+//                    .getResultList();
+//
+//            for (String s : result) {
+//                System.out.println("s = " + s);
+//
+//            }
+//
+//
+//            // ======================= 07 : CASE + COALESCE ============== //
+//            // COALESCE : 하나씩 조회해서 null이 아니면 반환
+//            // NULLIF : 두 값이 같으면 null 반환, 다르면 첫 번째 값 반환
+//            em.flush();
+//            em.clear();
+//
+//            String coalesceQuery = "select coalesce(m.username, '이름 없는 회원') as username " +
+//                    "from Member m ";
+//            String nullifQuery = "select nullif(m.username, '관리자') as username " +
+//                    "from Member m ";
+//
+//            List<String> coalesceResult = em.createQuery(coalesceQuery, String.class)
+//                    .getResultList();
+//
+//            for (String s : coalesceResult) {
+//                System.out.println("s = " + s);
+//            }
+
+
+            // ======================= 08 : fetch join ============== //
+            // DB SQL의 join 종류는 아니고 JPQL에서 성능 최적화 위해 제공 기능
+            // [JPQL] select m from Member m join fetch m.team
+            // [SQL] SELECT M.*, T.* FROM MEMBER M
+            //       INNER JOIN TEAM T ON M.TEAM_ID=T.ID
             em.flush();
             em.clear();
 
-            // 페이징은 sorting하면서 가져오기 때문에 제대로 돌아가는거 보려면 정렬부터
-            List<Member> result = em.createQuery("select m from Member m order by m.age desc", Member.class)
-                    .setFirstResult(1)  // 98부터 실행
-                    .setMaxResults(10)
+            String query = "select m From Member m";
+
+            List<Member> result = em.createQuery(query , Member.class)
                     .getResultList();
 
-            System.out.println("result.size = " + result.size());
-            for (Member member1 : result) {
-                System.out.println("member1 = " + member1);
+            // getname 호출하는 시점마다 DB에 쿼리를 날리게 된다. (LAZY로 되어있으니)
+            for (Member member : result) {
+                System.out.println("member = " + member.getUsername() + ", " + member.getTeam().getName());
+                // 회원1이 돌 때 팀A를 SQL 쿼리로 가져오게된다. ( 영속성 컨텍스트에 없기 때문 )
+                // ==> 회원1, 팀A(SQL)
+                // 회원2도 팀A소속, JPA에게 달라고 하면 그냥 영속성 컨텍스트에서 가져옴
+                // ==> 회원2, 팀A(1차캐시)
+                // 회원3은 팀B 이기 때문에 영속성 컨텍스트에 없어서 SQL 쿼리로 가져오게 된다.
+                // ==> 회원3, 팀B(SQL)
+                //// ==> 총 나가는 쿼리 수는 3개 ( 멤버조회, 팀A조회, 팀B조회 )
+                //// ==> 팀의 수에 따라서 EAGER 방식의 경우 N+1 문제가 발생할 수 있다.
+
             }
 
+            em.flush();
+            em.clear();
+
+            // 지연로딩을 해도 fetch join이 우선권을 갖는다.
+            String normalQuery = "select t From Team t"; // fetch join 없이는 팀은 2개로 나옴 (정상적 결과)
+            String fetchJoinQuery = "select t From Team t join fetch t.members"; // 결과가 3개 (join하면서 데이터 뻥튀기, 중복결과)
+                                    // 1:다 관계에서는 join 시 데이터 뻥튀기 가능성이 있다.
+
+            List<Team> fetchResult = em.createQuery(fetchJoinQuery, Team.class)
+                    .getResultList();
+
+            System.out.println("result.size() = " + result.size());
+
+            // 페치조인을 하게되면 쿼리가 한 번만 나간다.
+            // 그 내용을 보면 중복이 된 것을 볼 수 있다.
+            for (Team team : fetchResult) {
+                System.out.println("team = " + team.getName() + "|members=" + team.getMembers().size());
+                for (Member member : team.getMembers() ) {
+                    System.out.println("-> member = " + member);
+                }
+            }
+
+            // 중복된 결과를 제거하는 방법 : distinct 추가
+            // SQL은 컬럼들이 100% 중복된 결과여야 제거되지만
+            // JPA에서는 컬렉션 중복을 제거해줌으로 아래 쿼리는 결과적으로 중복값을 제거해준다.
+            String dtFetchJoinQuery = "select distinct t From Team t join fetch t.members"; // 결과가 3개 (join하면서 데이터 뻥튀기, 중복결과)
+
+
+            // 그렇다면 패치 조인과 일반 조인의 차이는?
+            //   - 일반 조인 실행 시 연관된 엔티티를 함께 조회하지 않음
+            //   - 패치 조인을 사용할 때만 연관된 엔티티도 함께 조회 ( 즉시 로딩 )
+            //   - 패치 조인은 객체 그래프를 SQL 한 번에 조회하는 개념
+
+            // 대부분의 N+1 문제를 패치 조인으로 해결할 수 있다.
+            
 
             tx.commit();
         } catch (Exception e) {
