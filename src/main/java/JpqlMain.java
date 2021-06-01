@@ -207,68 +207,139 @@ public class JpqlMain {
 //            }
 
 
-            // ======================= 08 : fetch join ============== //
-            // DB SQL의 join 종류는 아니고 JPQL에서 성능 최적화 위해 제공 기능
-            // [JPQL] select m from Member m join fetch m.team
-            // [SQL] SELECT M.*, T.* FROM MEMBER M
-            //       INNER JOIN TEAM T ON M.TEAM_ID=T.ID
-            em.flush();
-            em.clear();
+//            // ======================= 08 : fetch join ============== //
+//            // DB SQL의 join 종류는 아니고 JPQL에서 성능 최적화 위해 제공 기능
+//            // [JPQL] select m from Member m join fetch m.team
+//            // [SQL] SELECT M.*, T.* FROM MEMBER M
+//            //       INNER JOIN TEAM T ON M.TEAM_ID=T.ID
+//            em.flush();
+//            em.clear();
+//
+//            String query = "select m From Member m";
+//
+//            List<Member> result = em.createQuery(query , Member.class)
+//                    .getResultList();
+//
+//            // getname 호출하는 시점마다 DB에 쿼리를 날리게 된다. (LAZY로 되어있으니)
+//            for (Member member : result) {
+//                System.out.println("member = " + member.getUsername() + ", " + member.getTeam().getName());
+//                // 회원1이 돌 때 팀A를 SQL 쿼리로 가져오게된다. ( 영속성 컨텍스트에 없기 때문 )
+//                // ==> 회원1, 팀A(SQL)
+//                // 회원2도 팀A소속, JPA에게 달라고 하면 그냥 영속성 컨텍스트에서 가져옴
+//                // ==> 회원2, 팀A(1차캐시)
+//                // 회원3은 팀B 이기 때문에 영속성 컨텍스트에 없어서 SQL 쿼리로 가져오게 된다.
+//                // ==> 회원3, 팀B(SQL)
+//                //// ==> 총 나가는 쿼리 수는 3개 ( 멤버조회, 팀A조회, 팀B조회 )
+//                //// ==> 팀의 수에 따라서 EAGER 방식의 경우 N+1 문제가 발생할 수 있다.
+//
+//            }
+//
+//            em.flush();
+//            em.clear();
+//
+//            // 지연로딩을 해도 fetch join이 우선권을 갖는다.
+//            String normalQuery = "select t From Team t"; // fetch join 없이는 팀은 2개로 나옴 (정상적 결과)
+//            String fetchJoinQuery = "select t From Team t join fetch t.members"; // 결과가 3개 (join하면서 데이터 뻥튀기, 중복결과)
+//                                    // 1:다 관계에서는 join 시 데이터 뻥튀기 가능성이 있다.
+//
+//            List<Team> fetchResult = em.createQuery(fetchJoinQuery, Team.class)
+//                    .getResultList();
+//
+//            System.out.println("result.size() = " + result.size());
+//
+//            // 페치조인을 하게되면 쿼리가 한 번만 나간다.
+//            // 그 내용을 보면 중복이 된 것을 볼 수 있다.
+//            for (Team team : fetchResult) {
+//                System.out.println("team = " + team.getName() + "|members=" + team.getMembers().size());
+//                for (Member member : team.getMembers() ) {
+//                    System.out.println("-> member = " + member);
+//                }
+//            }
+//
+//            // 중복된 결과를 제거하는 방법 : distinct 추가
+//            // SQL은 컬럼들이 100% 중복된 결과여야 제거되지만
+//            // JPA에서는 컬렉션 중복을 제거해줌으로 아래 쿼리는 결과적으로 중복값을 제거해준다.
+//            String dtFetchJoinQuery = "select distinct t From Team t join fetch t.members"; // 결과가 3개 (join하면서 데이터 뻥튀기, 중복결과)
+//
+//
+//            // 그렇다면 패치 조인과 일반 조인의 차이는?
+//            //   - 일반 조인 실행 시 연관된 엔티티를 함께 조회하지 않음
+//            //   - 패치 조인을 사용할 때만 연관된 엔티티도 함께 조회 ( 즉시 로딩 )
+//            //   - 패치 조인은 객체 그래프를 SQL 한 번에 조회하는 개념
+//
+//            // 대부분의 N+1 문제를 패치 조인으로 해결할 수 있다.
+//
+//            // 패치 조인의 한계
+//            //   1. 패치 조인 대상에는 별칭을 줄 수 없다 (as)
+//            //   2. 둘 이상의 컬렉션은 패치 조인 할 수 없다.
+//            //    => teams, members 두 개를 패치조인 X
+//            //    => 1:다 데이터뻥튀기되는데, 다:다는 패치조인하면 데이터가 엄청 늘어난다.
+//            //  3. 컬렉션을 패치 조인하면 페이징 API를 사용할 수 없다.
+//            //    => 1:1, 다:1은 가능하지만, 컬렉션 패치 조인하게되면 데이터가 다 조회되지 않음
 
-            String query = "select m From Member m";
-
-            List<Member> result = em.createQuery(query , Member.class)
-                    .getResultList();
-
-            // getname 호출하는 시점마다 DB에 쿼리를 날리게 된다. (LAZY로 되어있으니)
-            for (Member member : result) {
-                System.out.println("member = " + member.getUsername() + ", " + member.getTeam().getName());
-                // 회원1이 돌 때 팀A를 SQL 쿼리로 가져오게된다. ( 영속성 컨텍스트에 없기 때문 )
-                // ==> 회원1, 팀A(SQL)
-                // 회원2도 팀A소속, JPA에게 달라고 하면 그냥 영속성 컨텍스트에서 가져옴
-                // ==> 회원2, 팀A(1차캐시)
-                // 회원3은 팀B 이기 때문에 영속성 컨텍스트에 없어서 SQL 쿼리로 가져오게 된다.
-                // ==> 회원3, 팀B(SQL)
-                //// ==> 총 나가는 쿼리 수는 3개 ( 멤버조회, 팀A조회, 팀B조회 )
-                //// ==> 팀의 수에 따라서 EAGER 방식의 경우 N+1 문제가 발생할 수 있다.
-
-            }
-
-            em.flush();
-            em.clear();
-
-            // 지연로딩을 해도 fetch join이 우선권을 갖는다.
-            String normalQuery = "select t From Team t"; // fetch join 없이는 팀은 2개로 나옴 (정상적 결과)
-            String fetchJoinQuery = "select t From Team t join fetch t.members"; // 결과가 3개 (join하면서 데이터 뻥튀기, 중복결과)
-                                    // 1:다 관계에서는 join 시 데이터 뻥튀기 가능성이 있다.
-
-            List<Team> fetchResult = em.createQuery(fetchJoinQuery, Team.class)
-                    .getResultList();
-
-            System.out.println("result.size() = " + result.size());
-
-            // 페치조인을 하게되면 쿼리가 한 번만 나간다.
-            // 그 내용을 보면 중복이 된 것을 볼 수 있다.
-            for (Team team : fetchResult) {
-                System.out.println("team = " + team.getName() + "|members=" + team.getMembers().size());
-                for (Member member : team.getMembers() ) {
-                    System.out.println("-> member = " + member);
-                }
-            }
-
-            // 중복된 결과를 제거하는 방법 : distinct 추가
-            // SQL은 컬럼들이 100% 중복된 결과여야 제거되지만
-            // JPA에서는 컬렉션 중복을 제거해줌으로 아래 쿼리는 결과적으로 중복값을 제거해준다.
-            String dtFetchJoinQuery = "select distinct t From Team t join fetch t.members"; // 결과가 3개 (join하면서 데이터 뻥튀기, 중복결과)
 
 
-            // 그렇다면 패치 조인과 일반 조인의 차이는?
-            //   - 일반 조인 실행 시 연관된 엔티티를 함께 조회하지 않음
-            //   - 패치 조인을 사용할 때만 연관된 엔티티도 함께 조회 ( 즉시 로딩 )
-            //   - 패치 조인은 객체 그래프를 SQL 한 번에 조회하는 개념
+            // ======================= 09 : 엔티티 직접 사용 ============== //
 
-            // 대부분의 N+1 문제를 패치 조인으로 해결할 수 있다.
-            
+//            // 09-1. 기본키 값
+//            String query = "select m from Member m where m = :member";
+//            String query2 = "select m from Member m where m.id = :memberId";
+//
+//            Member findMember = em.createQuery(query, Member.class)
+//                    .setParameter("member", member1)
+//                    .getSingleResult();
+//
+//            Member findMemberId = em.createQuery(query2, Member.class)
+//                    .setParameter("memberId", member1.getId())
+//                    .getSingleResult();
+//
+//            System.out.println("findMember = " + findMember);
+//            System.out.println("findMemberId = " + findMemberId);
+//
+//
+//            // 09-2. 외래키 값
+//            String teamQuery = "select m from Member m where m.team = :team";
+//
+//            List<Member> members = em.createQuery(teamQuery, Member.class)
+//                    .setParameter("team", teamA)
+//                    .getResultList();
+//
+//            for (Member member : members) {
+//                System.out.println("member = " + member);
+//            }
+
+
+            // ======================= 10 : named 쿼리 ============== //
+            // named 쿼리: 미리 정의해서 이름을 부여해두고 사용하는 JPQL
+            // 애플리케이션 로딩 시점에 쿼리를 검증할 수 있다는 것이 큰 장점
+
+            // Member 클래스의 named Query 참고
+
+//            em.flush();
+//            em.clear();
+//
+//            // named쿼리는 꼭 createNamedQuery 함수 사용
+//            List<Member> resultList = em.createNamedQuery("Member.findByUsername", Member.class)
+//                    .setParameter("username", "회원1")
+//                    .getResultList();
+//
+//            for (Member member : resultList) {
+//                System.out.println("member = " + member);
+//            }
+
+
+            // ======================= 11 : 벌크 연산 ============== //
+            // 벌크 연산은 SQL의 UPDATE, DELETE와 같다고 생각하면 된다.
+            //  = 쿼리 한 번으로 여러 테이블의 로우를 변경(엔티티)
+            //  = 벌크 연산은 영속성 컨텍스트를 무시하고 DB에 직접 쿼리
+            //    -> 때문에 벌크 연산 실행 하거나 영속성 컨텍스트를 초기화 해준다.
+            // 모든 멤버의 나이를 20살로 바꾼다.
+
+            int resultCount = em.createQuery("update Member m set m.age = 20")
+                    .executeUpdate();   // 벌크 연산
+
+            System.out.println("resultCount = " + resultCount);
+
 
             tx.commit();
         } catch (Exception e) {
